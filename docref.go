@@ -13,7 +13,7 @@ func (d *DocumentRef) Collection(id string) *CollectionRef {
 }
 
 // Get fetches the document referred to by d from Firestore, and unmarshals it into p.
-func (d *DocumentRef) Get(ctx context.Context, p model) error {
+func (d *DocumentRef) Get(ctx context.Context, p MutableModel) error {
 	fd := (*firestore.DocumentRef)(d)
 	doc, err := fd.Get(ctx)
 	if err != nil {
@@ -27,4 +27,10 @@ func (d *DocumentRef) Get(ctx context.Context, p model) error {
 	p.setCreateTime(doc.CreateTime)
 	p.setUpdateTime(doc.UpdateTime)
 	return nil
+}
+
+func (d *DocumentRef) Set(ctx context.Context, m ReadableModel) error {
+	fd := (*firestore.DocumentRef)(d)
+	_, err := fd.Set(ctx, m) // TODO: use our own struct tags
+	return err
 }

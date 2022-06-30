@@ -10,8 +10,17 @@ type Model struct {
 	UpdateTime time.Time
 }
 
-// The model interface is implemented only by calcifer.Model and structs that embed it.
-type model interface {
+// The ReadbleModel interface is satisfied only by calcifer.Model and structs that embed it.
+type ReadableModel interface {
+	isModel() bool
+}
+
+func (m Model) isModel() bool {
+	return true
+}
+
+// The MutableModel interface is satisfied only by pointers to calcifer.Model and structs that embed it.
+type MutableModel interface {
 	setID(string)
 	setCreateTime(time.Time)
 	setUpdateTime(time.Time)
