@@ -13,7 +13,7 @@ import (
 func testClient(t *testing.T) *Client {
 	ctx := context.Background()
 	if os.Getenv("FIRESTORE_EMULATOR_HOST") == "" {
-		t.Fatal("Test depends on the firestore emulator")
+		t.Skip("Test depends on the firestore emulator")
 	}
 	cli, err := firestore.NewClient(ctx, "test")
 	assert.NoError(t, err)

@@ -19,13 +19,11 @@ func (d *DocumentRef) Get(ctx context.Context, p MutableModel) error {
 	if err != nil {
 		return err
 	}
-	// TODO: use our own struct tags
-	if err := doc.DataTo(p); err != nil {
+	if err := docToModel(p, doc); err != nil {
 		return err
 	}
-	p.setID(doc.Ref.ID)
-	p.setCreateTime(doc.CreateTime)
-	p.setUpdateTime(doc.UpdateTime)
+	// TODO: optionally fetch foreign-key refs
+	// TODO: configurable retry-loops
 	return nil
 }
 
