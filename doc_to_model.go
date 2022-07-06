@@ -146,6 +146,12 @@ func dataToValue(v reflect.Value, d interface{}) error {
 }
 
 func populateStruct(v reflect.Value, d map[string]interface{}) error {
+	/* fs, */ _, err := defaultFieldCache.fields(v.Type())
+	if err != nil {
+		return err
+	}
+	// for each key in d
+	// look for a match in fs, and set the corresponding field's value (using dataToValue())
 	return errors.New("calcifer: populateStruct: unimplemented")
 }
 
