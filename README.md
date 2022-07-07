@@ -8,3 +8,5 @@ Planned features include:
 * Transactional and asynchronous denormalization based on declarative struct tags. 
 * Computed document properties.
 * Model history bookkeeping and visualization.
+* Smart retries for reads when Firestore is unavailable.
+* Smart retries for writes when an idempotency key is provided.
