@@ -27,8 +27,14 @@ func (d *DocumentRef) Get(ctx context.Context, p MutableModel) error {
 	return nil
 }
 
+// Set writes a Model to Firestore at the path referred to by d.
 func (d *DocumentRef) Set(ctx context.Context, m ReadableModel) error {
+	sm, err := modelToDoc(m)
+	if err != nil {
+		return err
+	}
 	fd := (*firestore.DocumentRef)(d)
-	_, err := fd.Set(ctx, m) // TODO: use our own struct tags
+	// TODO: transactionally store model history
+	_, err = fd.Set(ctx, sm)
 	return err
 }
