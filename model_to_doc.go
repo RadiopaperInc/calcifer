@@ -10,7 +10,7 @@ func modelToDoc(m ReadableModel) (map[string]interface{}, error) {
 	}
 	sm := make(map[string]interface{})
 	for _, f := range fs {
-		// TODO: if field is a struct or map; do this recursively
+		// TODO: if field is a struct or map; do this recursively; if the field is a pointer, dereference it
 		sm[f.Name] = v.FieldByIndex(f.Index).Interface()
 	}
 	return sm, nil
