@@ -37,10 +37,10 @@ type Event struct {
 	Model
 
 	Description string
-	Attendees   []User
-	Location    string // TODO: change to a *Location once we have foreign-keys
-	Start       time.Time
-	End         time.Time
+	Attendees   []User    `calcifer:"attendees,omitempty" firestore:"attendes,omitempty"`
+	Location    string    `calcifer:"location" firestore:"location"` // TODO: change to a *Location once we have foreign-keys
+	Start       time.Time `calcifer:"start" firestore:"start"`
+	End         time.Time `calcifer:"end" firestore:"end"`
 }
 
 func TestSetAndGetByID(t *testing.T) {

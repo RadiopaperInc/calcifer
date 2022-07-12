@@ -49,7 +49,8 @@ type cacheValue struct {
 }
 
 func validate(t reflect.Type) error {
-	return errors.New("validate: unimplemented")
+	return nil
+	// return errors.New("validate: unimplemented")
 }
 
 func (c *fieldCache) fields(t reflect.Type) (fieldList, error) {

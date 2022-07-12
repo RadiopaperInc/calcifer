@@ -146,13 +146,23 @@ func dataToValue(v reflect.Value, d interface{}) error {
 }
 
 func populateStruct(v reflect.Value, d map[string]interface{}) error {
-	/* fs, */ _, err := defaultFieldCache.fields(v.Type())
+	fs, err := defaultFieldCache.fields(v.Type())
 	if err != nil {
 		return err
 	}
-	// for each key in d
-	// look for a match in fs, and set the corresponding field's value (using dataToValue())
-	return errors.New("calcifer: populateStruct: unimplemented")
+OUTER:
+	for k, dd := range d {
+		for _, f := range fs { // TODO: make fs hold a map
+			if f.Name == k {
+				if err := dataToValue(v.FieldByIndex(f.Index), dd); err != nil {
+					return err
+				}
+				continue OUTER
+			}
+		}
+		return fmt.Errorf("calcifer: no struct field matched document field %q", k)
+	}
+	return nil
 }
 
 func populateMap(v reflect.Value, d map[string]interface{}) error {
