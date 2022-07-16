@@ -48,3 +48,45 @@ func TestDataPointerToValue(t *testing.T) {
 	assert.NoError(t, dataToValue(reflect.ValueOf(&i), int(42)))
 	assert.Equal(t, 42, *i)
 }
+
+func TestDataToValueMap(t *testing.T) {
+	t.Skip("populateMap: unimplemented")
+	var m map[string]string
+	d := map[string]interface{}{"a": "A", "b": "B"}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&m), d))
+	assert.Equal(t, d, m)
+}
+
+func TestDataToValueStruct(t *testing.T) {
+	type relatedModel struct {
+		Model
+		X int `calcifer:"x"`
+	}
+	type testModel struct {
+		Model
+		Name string `calcifer:"name"`
+		ELO  int    `calcifer:"elo_score"`
+	}
+	var s testModel
+	d := map[string]interface{}{"id": "1", "name": "Dave", "elo_score": 2500}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&s), d))
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "Dave", s.Name)
+	assert.Equal(t, 2500, s.ELO)
+}
+
+func TestDataToValueRelatedStruct(t *testing.T) {
+	type relatedModel struct {
+		Model
+		X int `calcifer:"x"`
+	}
+	type testModel struct {
+		Model
+		Rel relatedModel `calcifer:"rel,ref:foo"`
+	}
+	var s testModel
+	d := map[string]interface{}{"id": "1", "rel": "2"}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&s), d))
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "2", s.Rel.ID)
+}

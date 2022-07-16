@@ -5,9 +5,9 @@ import "time"
 // A Model is a Go-native representation of a document that can be stored in Firestore.
 // Embeded `Model` into your own struct to define other types of models.
 type Model struct {
-	ID         string
-	CreateTime time.Time
-	UpdateTime time.Time
+	ID         string    `calcifer:"id"`
+	CreateTime time.Time `calcifer:"create_time"`
+	UpdateTime time.Time `calcifer:"update_time"`
 }
 
 // The ReadbleModel interface is satisfied only by calcifer.Model and structs that embed it.
