@@ -7,10 +7,16 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-type CollectionRef firestore.CollectionRef
+type CollectionRef struct {
+	*firestore.CollectionRef
+	cli *Client
+}
 
 func (c *CollectionRef) Doc(id string) *DocumentRef {
-	return (*DocumentRef)((*firestore.CollectionRef)(c).Doc(id))
+	return &DocumentRef{
+		DocumentRef: c.CollectionRef.Doc(id),
+		cli:         c.cli,
+	}
 }
 
 // NewDoc returns a DocumentRef with a uniquely generated ID.

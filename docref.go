@@ -6,23 +6,32 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-type DocumentRef firestore.DocumentRef
+type DocumentRef struct {
+	*firestore.DocumentRef
+	cli *Client
+}
 
 func (d *DocumentRef) Collection(id string) *CollectionRef {
-	return (*CollectionRef)((*firestore.DocumentRef)(d).Collection(id))
+	return &CollectionRef{
+		CollectionRef: d.DocumentRef.Collection(id),
+		cli:           d.cli,
+	}
 }
 
 // Get fetches the document referred to by d from Firestore, and unmarshals it into p.
 func (d *DocumentRef) Get(ctx context.Context, p MutableModel) error {
-	fd := (*firestore.DocumentRef)(d)
-	doc, err := fd.Get(ctx)
+	doc, err := d.DocumentRef.Get(ctx)
 	if err != nil {
 		return err
 	}
 	if err := docToModel(p, doc); err != nil {
 		return err
 	}
-	// TODO: optionally fetch foreign-key refs
+
+	// TODO: make expansion optional
+	if err := d.cli.expandModel(ctx, p); err != nil {
+		return err
+	}
 	// TODO: configurable retry-loops
 	return nil
 }
@@ -33,8 +42,7 @@ func (d *DocumentRef) Set(ctx context.Context, m ReadableModel) error {
 	if err != nil {
 		return err
 	}
-	fd := (*firestore.DocumentRef)(d)
 	// TODO: transactionally store model history
-	_, err = fd.Set(ctx, sm)
+	_, err = d.DocumentRef.Set(ctx, sm)
 	return err
 }

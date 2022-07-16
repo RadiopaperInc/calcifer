@@ -154,7 +154,23 @@ OUTER:
 	for k, dd := range d {
 		for _, f := range fs { // TODO: make fs hold a map
 			if f.Name == k {
-				if err := dataToValue(v.FieldByIndex(f.Index), dd); err != nil {
+				rf := v.FieldByIndex(f.Index)
+				if f.TagOptions.reference != "" {
+					fmt.Println("foreign key", f.TagOptions.reference)
+					ds, ok := dd.(string)
+					if !ok {
+						return errors.New("calcifier: cannot use non-string value as foreign key")
+					}
+					if rf.Kind() == reflect.Pointer {
+						if rf.IsNil() {
+							rf.Set(reflect.New(rf.Type().Elem()))
+						}
+						rf = rf.Elem()
+					}
+					if err := populateForeignKey(rf, ds); err != nil {
+						return err
+					}
+				} else if err := dataToValue(rf, dd); err != nil {
 					return err
 				}
 				continue OUTER
@@ -167,4 +183,13 @@ OUTER:
 
 func populateMap(v reflect.Value, d map[string]interface{}) error {
 	return errors.New("calcifer: populateMap: unimplemented")
+}
+
+func populateForeignKey(v reflect.Value, d string) error {
+	sv := v.FieldByName("ID")
+	if sv.Kind() != reflect.String {
+		return errors.New("calcifer: missing string ID field on foreign key model")
+	}
+	sv.SetString(d)
+	return nil
 }

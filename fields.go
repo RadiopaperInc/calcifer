@@ -237,8 +237,9 @@ func isLeafType(t reflect.Type) bool {
 }
 
 type tagOptions struct {
-	omitEmpty       bool // do not marshal value if empty
-	serverTimestamp bool // set time.Time to server timestamp on write
+	omitEmpty       bool   // do not marshal value if empty
+	serverTimestamp bool   // set time.Time to server timestamp on write
+	reference       string // collection referenced by this field
 }
 
 // parseTag interprets firestore struct field tags.
@@ -249,6 +250,10 @@ func parseTag(t reflect.StructTag) (name string, keep bool, options *tagOptions,
 	}
 	tagOpts := tagOptions{}
 	for _, opt := range opts {
+		if strings.HasPrefix(opt, "ref:") {
+			tagOpts.reference = strings.TrimPrefix(opt, "ref:")
+			continue
+		}
 		switch opt {
 		case "omitempty":
 			tagOpts.omitEmpty = true

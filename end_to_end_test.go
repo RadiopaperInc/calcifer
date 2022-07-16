@@ -38,9 +38,26 @@ type Event struct {
 
 	Description string
 	Attendees   []User    `calcifer:"attendees,omitempty"`
-	Location    string    `calcifer:"location"` // TODO: change to a *Location once we have foreign-keys
+	Location    *Location `calcifer:"location,ref:locations"`
 	Start       time.Time `calcifer:"start"`
 	End         time.Time `calcifer:"end"`
+}
+
+func TestSetWithNilForeignKey(t *testing.T) {
+	ctx := context.Background()
+	cli := testClient(t)
+
+	eventRef := cli.Collection("events").NewDoc()
+	newEvent := Event{
+		Description: "An Unexpected Party",
+		Start:       time.Date(1937, time.September, 21, 17, 0, 0, 0, time.UTC),
+		End:         time.Date(1937, time.September, 22, 06, 0, 0, 0, time.UTC),
+		Location:    nil,
+	}
+	err := eventRef.Set(ctx, newEvent)
+	assert.NoError(t, err)
+
+	// TODO: assert raw firestore contents
 }
 
 func TestSetAndGetByID(t *testing.T) {
@@ -59,7 +76,7 @@ func TestSetAndGetByID(t *testing.T) {
 		Description: "An Unexpected Party",
 		Start:       time.Date(1937, time.September, 21, 17, 0, 0, 0, time.UTC),
 		End:         time.Date(1937, time.September, 22, 06, 0, 0, 0, time.UTC),
-		Location:    newLocation.ID, // TODO: &Location{ID: newLocation>ID}
+		Location:    &Location{Model: Model{ID: locationRef.ID}},
 	}
 	err = eventRef.Set(ctx, newEvent)
 	assert.NoError(t, err)
@@ -71,7 +88,8 @@ func TestSetAndGetByID(t *testing.T) {
 	assert.Equal(t, eventRef.ID, savedEvent.ID)
 	assert.NotZero(t, savedEvent.CreateTime)
 	assert.Equal(t, savedEvent.CreateTime, savedEvent.UpdateTime)
-	assert.Equal(t, savedEvent.Description, newEvent.Description)
-	assert.Equal(t, savedEvent.Start, newEvent.Start)
-	assert.Equal(t, savedEvent.Location, newEvent.Location) // TODO: expand and assert Bag End
+	assert.Equal(t, newEvent.Description, savedEvent.Description)
+	assert.Equal(t, newEvent.Start, savedEvent.Start)
+	assert.Equal(t, newEvent.Location.ID, savedEvent.Location.ID)
+	assert.Equal(t, newLocation.Name, savedEvent.Location.Name)
 }
