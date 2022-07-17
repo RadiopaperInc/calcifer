@@ -17,6 +17,7 @@ package calcifer
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -47,4 +48,76 @@ func TestValueToInterfaceInt(t *testing.T) {
 	assert.Equal(t, int64(42), i.(int64))
 }
 
-// TODO: struct, etc.
+func TestValueToInterfaceTime(t *testing.T) {
+	now := time.Now()
+	ts, err := valueToInterface(reflect.ValueOf(now))
+	assert.NoError(t, err)
+	assert.Equal(t, now, ts.(time.Time))
+}
+
+func TestValueToInterfacePointer(t *testing.T) {
+	n := 42
+	i, err := valueToInterface(reflect.ValueOf(&n))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(42), i.(int64))
+}
+
+func TestValueToInterfaceMap(t *testing.T) {
+	t.Skip("mapToInterface: unimplemented")
+	d := map[string]string{"a": "A", "b": "B"}
+	i, err := valueToInterface(reflect.ValueOf(d))
+	assert.NoError(t, err)
+	assert.Equal(t, d, i.(map[string]string))
+}
+
+func TestValueToInterfaceStruct(t *testing.T) {
+	type coord struct {
+		X int `calcifer:"x"`
+		Y int `calcifer:"y"`
+	}
+	c := coord{-3, 7}
+	i, err := valueToInterface(reflect.ValueOf(c))
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]interface{}{"x": int64(-3), "y": int64(7)}, i)
+}
+
+func TestModelToDoc(t *testing.T) {
+	type testModel struct {
+		Model
+		Name string `calcifer:"name"`
+		ELO  int    `calcifer:"elo_score"`
+	}
+	m := testModel{
+		Model: Model{ID: "1"},
+		Name:  "Dave",
+		ELO:   2500,
+	}
+
+	i, err := modelToDoc(m)
+	assert.NoError(t, err)
+	im := i.(map[string]interface{})
+	assert.Equal(t, "1", im["id"])
+	assert.Equal(t, "Dave", im["name"])
+	assert.Equal(t, int64(2500), im["elo_score"])
+}
+
+func TestRelatedModelToDoc(t *testing.T) {
+	type relatedModel struct {
+		Model
+		X int `calcifer:"x"`
+	}
+	type testModel struct {
+		Model
+		Rel relatedModel `calcifer:"rel,ref:foo"`
+	}
+	m := testModel{
+		Model: Model{ID: "1"},
+		Rel:   relatedModel{Model: Model{ID: "2"}},
+	}
+
+	i, err := modelToDoc(m)
+	assert.NoError(t, err)
+	im := i.(map[string]interface{})
+	assert.Equal(t, "1", im["id"])
+	assert.Equal(t, "2", im["rel"])
+}
