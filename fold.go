@@ -1,7 +1,21 @@
+// Copyright 2016 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package calcifer
 
-// This file was copied from https://go.googlesource.com/go/+/go1.7.3/src/encoding/json/fold.go.
-// Only the license and package were changed.
+// This file was copied from https://github.com/googleapis/google-cloud-go/blob/v0.103.0/internal/fields/fold.go.
+// Only the package was changed.
 
 import (
 	"bytes"
