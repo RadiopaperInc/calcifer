@@ -72,10 +72,6 @@ func TestDataToValueMap(t *testing.T) {
 }
 
 func TestDataToValueStruct(t *testing.T) {
-	type relatedModel struct {
-		Model
-		X int `calcifer:"x"`
-	}
 	type testModel struct {
 		Model
 		Name string `calcifer:"name"`
