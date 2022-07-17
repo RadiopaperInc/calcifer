@@ -58,11 +58,11 @@ func valueToInterface(v reflect.Value) (interface{}, error) {
 }
 
 func sliceToInterface(v reflect.Value) (interface{}, error) {
-	return nil, nil
+	return nil, nil // TODO: errors.New("calcifer: sliceToInterface: unimplemented")
 }
 
 func mapToInterface(v reflect.Value) (interface{}, error) {
-	return nil, nil
+	return nil, errors.New("calcifer: mapToInterface: unimplemented")
 }
 
 func structToInterface(v reflect.Value) (interface{}, error) {

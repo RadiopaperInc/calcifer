@@ -156,7 +156,6 @@ OUTER:
 			if f.Name == k {
 				rf := v.FieldByIndex(f.Index)
 				if f.TagOptions.reference != "" {
-					fmt.Println("foreign key", f.TagOptions.reference)
 					ds, ok := dd.(string)
 					if !ok {
 						return errors.New("calcifier: cannot use non-string value as foreign key")
