@@ -22,8 +22,8 @@ import (
 )
 
 type CollectionRef struct {
-	*firestore.CollectionRef
-	cli *Client
+	cref *firestore.CollectionRef
+	cli  *Client
 
 	// Use the methods of Query on a CollectionRef to create and run queries.
 	Query
@@ -31,7 +31,7 @@ type CollectionRef struct {
 
 func (c *CollectionRef) Doc(id string) *DocumentRef {
 	return &DocumentRef{
-		DocumentRef: c.CollectionRef.Doc(id),
+		DocumentRef: c.cref.Doc(id),
 		cli:         c.cli,
 	}
 }
