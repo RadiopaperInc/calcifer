@@ -24,6 +24,9 @@ import (
 type CollectionRef struct {
 	*firestore.CollectionRef
 	cli *Client
+
+	// Use the methods of Query on a CollectionRef to create and run queries.
+	Query
 }
 
 func (c *CollectionRef) Doc(id string) *DocumentRef {
