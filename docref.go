@@ -27,8 +27,8 @@ type DocumentRef struct {
 
 func (d *DocumentRef) Collection(id string) *CollectionRef {
 	return &CollectionRef{
-		CollectionRef: d.DocumentRef.Collection(id),
-		cli:           d.cli,
+		cref: d.DocumentRef.Collection(id),
+		cli:  d.cli,
 	}
 }
 

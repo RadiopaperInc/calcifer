@@ -28,7 +28,11 @@ func NewClient(fs *firestore.Client) *Client {
 
 func (c *Client) Collection(path string) *CollectionRef {
 	return &CollectionRef{
-		CollectionRef: c.fs.Collection(path),
-		cli:           c,
+		cref: c.fs.Collection(path),
+		cli:  c,
+		Query: Query{
+			cli:   c,
+			query: c.fs.Collection(path).Query,
+		},
 	}
 }
