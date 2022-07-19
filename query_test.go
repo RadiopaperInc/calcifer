@@ -45,7 +45,7 @@ func TestQueryIteratorExpansion(t *testing.T) {
 
 	type User struct {
 		Model
-		Name string `calcivfer:"name"`
+		Name string `calcifer:"name"`
 	}
 
 	type Post struct {
@@ -72,12 +72,12 @@ func TestQueryIteratorExpansion(t *testing.T) {
 		Author: &User{Model: Model{ID: evan.ID}},
 	}))
 
-	iter := posts.OrderBy("create_time", firestore.Desc).Documents(ctx)
+	iter := posts.OrderBy("body", firestore.Desc).Documents(ctx)
 	var p1, p2 Post
 	assert.NoError(t, iter.Next(ctx, &p1))
 	assert.NoError(t, iter.Next(ctx, &p2))
 	assert.Equal(t, iterator.Done, iter.Next(ctx, nil))
 
-	assert.Equal(t, "Evan", p2.Author.Name)
-	assert.Equal(t, "Dave", p1.Author.Name)
+	assert.Equal(t, "Evan", p1.Author.Name)
+	assert.Equal(t, "Dave", p2.Author.Name)
 }
