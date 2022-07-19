@@ -24,30 +24,21 @@ type Model struct {
 	UpdateTime time.Time `calcifer:"update_time"`
 }
 
-// The ReadbleModel interface is satisfied only by calcifer.Model and structs that embed it.
-type ReadableModel interface {
-	isModel() bool
-}
+// // The MutableModel interface is satisfied only by pointers to calcifer.Model and structs that embed it.
+// type MutableModel interface {
+// 	setID(string)
+// 	setCreateTime(time.Time)
+// 	setUpdateTime(time.Time)
+// }
 
-func (m Model) isModel() bool {
-	return true
-}
-
-// The MutableModel interface is satisfied only by pointers to calcifer.Model and structs that embed it.
-type MutableModel interface {
-	setID(string)
-	setCreateTime(time.Time)
-	setUpdateTime(time.Time)
-}
-
-func (m *Model) setID(id string) {
+func (m Model) setID(id string) {
 	m.ID = id
 }
 
-func (m *Model) setCreateTime(t time.Time) {
+func (m Model) setCreateTime(t time.Time) {
 	m.CreateTime = t
 }
 
-func (m *Model) setUpdateTime(t time.Time) {
+func (m Model) setUpdateTime(t time.Time) {
 	m.UpdateTime = t
 }

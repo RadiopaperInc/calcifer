@@ -61,7 +61,7 @@ func TestSetWithNilForeignKey(t *testing.T) {
 	ctx := context.Background()
 	cli := testClient(t)
 
-	eventRef := cli.Collection("events").NewDoc()
+	eventRef := Collection(cli, "events").NewDoc()
 	newEvent := Event{
 		Description: "An Unexpected Party",
 		Start:       time.Date(1937, time.September, 21, 17, 0, 0, 0, time.UTC),

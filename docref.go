@@ -20,38 +20,39 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-type DocumentRef struct {
+type DocumentRef[M Model] struct {
 	*firestore.DocumentRef
 	cli *Client
 }
 
-func (d *DocumentRef) Collection(id string) *CollectionRef {
-	return &CollectionRef{
+func (d *DocumentRef[M]) Collection(id string) *CollectionRef[M] {
+	return &CollectionRef[M]{
 		cref: d.DocumentRef.Collection(id),
 		cli:  d.cli,
 	}
 }
 
 // Get fetches the document referred to by d from Firestore, and unmarshals it into p.
-func (d *DocumentRef) Get(ctx context.Context, p MutableModel) error {
+func (d *DocumentRef[M]) Get(ctx context.Context) (*M, error) {
 	doc, err := d.DocumentRef.Get(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := docToModel(p, doc); err != nil {
-		return err
+	p, err := docToModel[M](doc)
+	if err != nil {
+		return nil, err
 	}
 
 	// TODO: make expansion optional
-	if err := d.cli.expandModel(ctx, p); err != nil {
-		return err
+	if err := expandModel(ctx, d.cli, p); err != nil {
+		return nil, err
 	}
 	// TODO: configurable retry-loops
-	return nil
+	return p, nil
 }
 
 // Set writes a Model to Firestore at the path referred to by d.
-func (d *DocumentRef) Set(ctx context.Context, m ReadableModel) error {
+func (d *DocumentRef[M]) Set(ctx context.Context, m M) error {
 	sm, err := modelToDoc(m)
 	if err != nil {
 		return err

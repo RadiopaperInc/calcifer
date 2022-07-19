@@ -10,7 +10,7 @@ import (
 //
 // Query values are immutable. Each Query method creates
 // a new Query; it does not modify the old.
-type Query struct {
+type Query[M Model] struct {
 	cli   *Client
 	query firestore.Query
 }
@@ -21,8 +21,8 @@ type Query struct {
 // fields, and must not contain any of the runes "˜*/[]".
 // The op argument must be one of "==", "!=", "<", "<=", ">", ">=",
 // "array-contains", "array-contains-any", "in" or "not-in".
-func (q Query) Where(path, op string, value interface{}) Query {
-	return Query{cli: q.cli, query: q.query.Where(path, op, value)}
+func (q Query[M]) Where(path, op string, value interface{}) Query[M] {
+	return Query[M]{cli: q.cli, query: q.query.Where(path, op, value)}
 }
 
 // OrderBy returns a new Query that specifies the order in which results are
@@ -33,20 +33,20 @@ func (q Query) Where(path, op string, value interface{}) Query {
 // fields, and must not contain any of the runes "˜*/[]".
 //
 // To order by document name, use the special field path DocumentID.
-func (q Query) OrderBy(path string, dir firestore.Direction) Query {
-	return Query{cli: q.cli, query: q.query.OrderBy(path, dir)}
+func (q Query[M]) OrderBy(path string, dir firestore.Direction) Query[M] {
+	return Query[M]{cli: q.cli, query: q.query.OrderBy(path, dir)}
 }
 
 // Limit returns a new Query that specifies the maximum number of first results
 // to return. It must not be negative.
-func (q Query) Limit(n int) Query {
-	return Query{cli: q.cli, query: q.query.Limit(n)}
+func (q Query[M]) Limit(n int) Query[M] {
+	return Query[M]{cli: q.cli, query: q.query.Limit(n)}
 }
 
 // LimitToLast returns a new Query that specifies the maximum number of last
 // results to return. It must not be negative.
-func (q Query) LimitToLast(n int) Query {
-	return Query{cli: q.cli, query: q.query.LimitToLast(n)}
+func (q Query[M]) LimitToLast(n int) Query[M] {
+	return Query[M]{cli: q.cli, query: q.query.LimitToLast(n)}
 }
 
 // TODO: StartAt, StartAfter, EndAt, EndBefore; which require un-wrapping DocumentRefs.
@@ -54,14 +54,14 @@ func (q Query) LimitToLast(n int) Query {
 // TODO: Serialize, Deserialize
 
 // Documents returns an iterator over the query's resulting documents.
-func (q Query) Documents(ctx context.Context) *DocumentIterator {
-	return &DocumentIterator{
+func (q Query[M]) Documents(ctx context.Context) *DocumentIterator[M] {
+	return &DocumentIterator[M]{
 		cli: q.cli,
 		it:  q.query.Documents(ctx),
 	}
 }
 
-type DocumentIterator struct {
+type DocumentIterator[M Model] struct {
 	cli *Client
 	it  *firestore.DocumentIterator
 }
@@ -70,18 +70,39 @@ type DocumentIterator struct {
 // If error is iterator.Done, no result is unmarshalled. Once Next returns Done,
 // all subsequent calls will return
 // Done.
-func (it *DocumentIterator) Next(ctx context.Context, p MutableModel) error {
+func (it *DocumentIterator[M]) Next(ctx context.Context) (*M, error) {
 	doc, err := it.it.Next()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := docToModel(p, doc); err != nil {
-		return err
+	m, err := docToModel[M](doc)
+	if err != nil {
+		return nil, err
 	}
 
 	// TODO: make expansion optional
-	if err := it.cli.expandModel(ctx, p); err != nil {
-		return err
+	if err := expandModel[M](ctx, it.cli, m); err != nil {
+		return nil, err
 	}
-	return nil
+	return m, nil
+}
+
+func (it *DocumentIterator[M]) GetAll(ctx context.Context) ([]*M, error) {
+	docs, err := it.it.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	ms := make([]*M, len(docs))
+	for i := 0; i < len(docs); i++ {
+		if m, err := docToModel[M](docs[i]); err != nil {
+			return nil, err
+		} else {
+			ms[i] = m
+		}
+		// TODO: make expansion optional, and parallelize across instances
+		if err := expandModel(ctx, it.cli, ms[i]); err != nil {
+			return nil, err
+		}
+	}
+	return ms, nil
 }

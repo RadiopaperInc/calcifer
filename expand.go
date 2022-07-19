@@ -18,9 +18,10 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"unsafe"
 )
 
-func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
+func expandModel[M Model](ctx context.Context, c *Client, m *M) error {
 	v := reflect.ValueOf(m)
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
@@ -49,9 +50,11 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 		if id == "" {
 			continue // empty field, no ID to expand
 		}
-		ref := c.Collection(f.TagOptions.reference).Doc(id)
-		if err := ref.Get(ctx, rv.Interface().(MutableModel)); err != nil {
+		ref := Collection(c, f.TagOptions.reference).Doc(id)
+		if m, err := ref.Get(ctx); err != nil {
 			return err
+		} else {
+			rv.SetPointer(unsafe.Pointer(m)) // TODO: can we be safe?
 		}
 	}
 	return nil

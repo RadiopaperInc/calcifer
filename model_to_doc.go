@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func modelToDoc(m ReadableModel) (interface{}, error) {
+func modelToDoc[M Model](m M) (interface{}, error) {
 	v := reflect.ValueOf(m)
 	_, err := defaultFieldCache.fields(v.Type())
 	if err != nil {

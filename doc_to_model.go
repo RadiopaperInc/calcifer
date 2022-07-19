@@ -28,19 +28,20 @@ var (
 	typeOfGoTime    = reflect.TypeOf(time.Time{})
 )
 
-func docToModel(m MutableModel, doc *firestore.DocumentSnapshot) error {
+func docToModel[M Model](doc *firestore.DocumentSnapshot) (*M, error) {
 	d := doc.Data()
+	var m M
 	v := reflect.ValueOf(m)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return errors.New("calcifer: nil or not a pointer")
+		return nil, errors.New("calcifer: nil or not a pointer")
 	}
 	if err := dataToValue(v, d); err != nil {
-		return err
+		return nil, err
 	}
 	m.setID(doc.Ref.ID)
 	m.setCreateTime(doc.CreateTime)
 	m.setUpdateTime(doc.UpdateTime)
-	return nil
+	return &m, nil
 }
 
 func dataToValue(v reflect.Value, d interface{}) error {

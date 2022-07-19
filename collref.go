@@ -21,23 +21,23 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-type CollectionRef struct {
+type CollectionRef[M Model] struct {
 	cref *firestore.CollectionRef
 	cli  *Client
 
 	// Use the methods of Query on a CollectionRef to create and run queries.
-	Query
+	Query[M]
 }
 
-func (c *CollectionRef) Doc(id string) *DocumentRef {
-	return &DocumentRef{
+func (c *CollectionRef[M]) Doc(id string) *DocumentRef[M] {
+	return &DocumentRef[M]{
 		DocumentRef: c.cref.Doc(id),
 		cli:         c.cli,
 	}
 }
 
 // NewDoc returns a DocumentRef with a uniquely generated ID.
-func (c *CollectionRef) NewDoc() *DocumentRef {
+func (c *CollectionRef[M]) NewDoc() *DocumentRef[M] {
 	return c.Doc(uniqueID())
 }
 
