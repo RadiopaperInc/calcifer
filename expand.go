@@ -17,7 +17,11 @@ package calcifer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+
+	"cloud.google.com/go/firestore"
+	"golang.org/x/sync/errgroup"
 )
 
 func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
@@ -32,7 +36,7 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 	if err != nil {
 		return err
 	}
-	for _, f := range fs {
+	for _, f := range fs { // TODO: parallelize
 		if f.TagOptions.reference == "" {
 			continue
 		}
@@ -58,5 +62,54 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 }
 
 func (c *Client) expandAll(ctx context.Context, p any) error {
-	return nil
+	modelSlice := reflect.ValueOf(p).Elem()
+	fs, err := defaultFieldCache.fields(modelSlice.Index(0).Type())
+	if err != nil {
+		return err
+	}
+	refs := make([][]*firestore.DocumentRef, len(fs))
+	for fi, f := range fs {
+		if f.TagOptions.reference == "" {
+			continue
+		}
+		refs[fi] = make([]*firestore.DocumentRef, modelSlice.Len())
+		for i := 0; i < modelSlice.Len(); i++ {
+			rv := modelSlice.Index(i).FieldByIndex(fs[fi].Index)
+			sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
+			if sv.Kind() != reflect.Struct {
+				return errors.New("calcifer: missing Model field on foreign key reference object")
+			}
+			sv = sv.FieldByName("ID")
+			id := sv.String()
+			if id == "" {
+				continue // empty field, no ID to expand | TODO, ok if we GetAll with this in the slice?
+			}
+			refs[fi][i] = c.Collection(f.TagOptions.reference).cref.Doc(id)
+		}
+	}
+	g, gctx := errgroup.WithContext(ctx)
+	for fi, f := range fs {
+		if f.TagOptions.reference == "" {
+			continue
+		}
+		fi := fi
+		g.Go(func() error {
+			docs, err := c.fs.GetAll(gctx, refs[fi])
+			if err != nil {
+				return err
+			}
+			for i, doc := range docs {
+				if refs[fi][i] != nil {
+					if !doc.Exists() {
+						return fmt.Errorf("calcifer: unable to find doc with ID %q during expansion of collection %q", refs[fi][i].ID, fs[fi].TagOptions.reference)
+					}
+					if err := docToModel(modelSlice.Index(i).FieldByIndex(fs[fi].Index).Interface().(MutableModel), doc); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+	}
+	return g.Wait()
 }
