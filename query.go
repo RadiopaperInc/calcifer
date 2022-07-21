@@ -107,5 +107,8 @@ func (it *DocumentIterator) GetAll(ctx context.Context, p any) error {
 			return err
 		}
 	}
+	if err := it.cli.expandAll(ctx, p); err != nil {
+		return err
+	}
 	return nil
 }

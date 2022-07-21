@@ -56,3 +56,7 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 	}
 	return nil
 }
+
+func (c *Client) expandAll(ctx context.Context, p any) error {
+	return nil
+}
