@@ -2,6 +2,8 @@ package calcifer
 
 import (
 	"context"
+	"reflect"
+	"unsafe"
 
 	"cloud.google.com/go/firestore"
 )
@@ -82,6 +84,25 @@ func (it *DocumentIterator) Next(ctx context.Context, p MutableModel) error {
 	// TODO: make expansion optional
 	if err := it.cli.expandModel(ctx, p); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (it *DocumentIterator) GetAll(p any) error {
+	docs, err := it.it.GetAll()
+	if err != nil {
+		return err
+	}
+
+	t := reflect.TypeOf(p).Elem().Elem()
+	newSlice := reflect.MakeSlice(reflect.SliceOf(t), len(docs), len(docs))
+	reflect.ValueOf(p).SetPointer(unsafe.Pointer(newSlice.UnsafePointer()))
+
+	for i, doc := range docs {
+		err := docToModel(newSlice.Index(i).Addr().Interface().(MutableModel), doc)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
