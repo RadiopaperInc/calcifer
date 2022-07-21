@@ -16,6 +16,9 @@ package calcifer
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -26,8 +29,18 @@ import (
 
 func testClient(t *testing.T) *Client {
 	ctx := context.Background()
-	if os.Getenv("FIRESTORE_EMULATOR_HOST") == "" {
+	eh := os.Getenv("FIRESTORE_EMULATOR_HOST")
+	if eh == "" {
 		t.Skip("Test depends on the firestore emulator")
+	}
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s/emulator/v1/projects/test/databases/(default)/documents", eh), nil)
+	assert.NoError(t, err)
+	resp, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	if resp.StatusCode != http.StatusOK {
+		errBody, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		t.Errorf("%d: %s", resp.StatusCode, string(errBody))
 	}
 	cli, err := firestore.NewClient(ctx, "test")
 	assert.NoError(t, err)
