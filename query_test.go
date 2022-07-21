@@ -116,7 +116,8 @@ func TestQueryGetAll(t *testing.T) {
 	}))
 
 	var p []Post
-	err := posts.OrderBy("body", firestore.Desc).Documents(ctx).GetAll(&p)
+	err := posts.OrderBy("body", firestore.Desc).Documents(ctx).GetAll(ctx, &p)
+	assert.Equal(t, 2, len(p))
 	assert.NoError(t, err)
 	assert.Equal(t, "Evan", p[0].Author.Name)
 	assert.Equal(t, "Dave", p[1].Author.Name)
