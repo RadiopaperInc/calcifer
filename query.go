@@ -103,12 +103,11 @@ func (it *DocumentIterator) GetAll(ctx context.Context, p any) error {
 		if err != nil {
 			return err
 		}
-		if err := it.cli.expandModel(ctx, mm); err != nil {
+	}
+	if len(docs) > 0 {
+		if err := it.cli.expandAll(ctx, p); err != nil {
 			return err
 		}
-	}
-	if err := it.cli.expandAll(ctx, p); err != nil {
-		return err
 	}
 	return nil
 }
