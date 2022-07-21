@@ -81,3 +81,43 @@ func TestQueryIteratorExpansion(t *testing.T) {
 	assert.Equal(t, "Evan", p1.Author.Name)
 	assert.Equal(t, "Dave", p2.Author.Name)
 }
+
+func TestQueryGetAll(t *testing.T) {
+	ctx := context.Background()
+	cli := testClient(t)
+
+	type User struct {
+		Model
+		Name string `calcifer:"name"`
+	}
+
+	type Post struct {
+		Model
+		Body   string `calcifer:"body"`
+		Author *User  `calcifer:"author,ref:users"`
+	}
+
+	users := cli.Collection("users")
+	dave := users.NewDoc()
+	assert.NoError(t, dave.Set(ctx, User{Name: "Dave"}))
+	evan := users.NewDoc()
+	assert.NoError(t, evan.Set(ctx, User{Name: "Evan"}))
+
+	posts := cli.Collection("posts")
+
+	assert.NoError(t, posts.NewDoc().Set(ctx, Post{
+		Body:   "Hello, World!",
+		Author: &User{Model: Model{ID: dave.ID}},
+	}))
+
+	assert.NoError(t, posts.NewDoc().Set(ctx, Post{
+		Body:   "Time for a long walk",
+		Author: &User{Model: Model{ID: evan.ID}},
+	}))
+
+	var p []Post
+	err := posts.OrderBy("body", firestore.Desc).Documents(ctx).GetAll(&p)
+	assert.NoError(t, err)
+	assert.Equal(t, "Evan", p[0].Author.Name)
+	assert.Equal(t, "Dave", p[1].Author.Name)
+}
