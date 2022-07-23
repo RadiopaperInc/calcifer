@@ -124,3 +124,8 @@ func TestQueryGetAll(t *testing.T) {
 	assert.Equal(t, "Dave", p[1].Author.Name)
 	assert.Equal(t, dave.ID, p[1].Author.ID)
 }
+
+// TODO: test GetAll on Posts that have:
+// * nil Author
+// * non-nil Author with empty Author.ID
+// * non-nil Author with Author.ID for non-existent User
