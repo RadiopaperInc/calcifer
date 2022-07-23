@@ -16,6 +16,12 @@ type Query struct {
 	query firestore.Query
 }
 
+// A Queryer is a Query or a CollectionRef. CollectionRefs act as queries whose
+// results are all the documents in the collection.
+type Queryer interface {
+	query() *Query
+}
+
 // Where returns a new Query that filters the set of results.
 // A Query can have multiple filters.
 // The path argument can be a single field or a dot-separated sequence of

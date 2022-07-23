@@ -60,3 +60,10 @@ func (d *DocumentRef) Set(ctx context.Context, m ReadableModel) error {
 	_, err = d.DocumentRef.Set(ctx, sm)
 	return err
 }
+
+// Delete removes from Firestore the document at the path referred to by d if it exists.
+func (d *DocumentRef) Delete(ctx context.Context) error {
+	// TODO: transactionally store model history
+	_, err := d.DocumentRef.Delete(ctx)
+	return err
+}
