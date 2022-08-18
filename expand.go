@@ -61,6 +61,43 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 	return nil
 }
 
+func (tx *Transaction) expandModel(m MutableModel) error {
+	v := reflect.ValueOf(m)
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil // no model to expand
+		}
+		v = v.Elem()
+	}
+	fs, err := defaultFieldCache.fields(v.Type())
+	if err != nil {
+		return err
+	}
+	for _, f := range fs { // TODO: parallelize
+		if f.TagOptions.reference == "" {
+			continue
+		}
+		rv := v.FieldByIndex(f.Index)
+		if rv.Kind() != reflect.Pointer {
+			return errors.New("calcifier: trying to expand into non-pointer field")
+		}
+		sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
+		if sv.Kind() != reflect.Struct {
+			return errors.New("calcifer: missing Model field on foreign key reference object")
+		}
+		sv = sv.FieldByName("ID")
+		id := sv.String()
+		if id == "" {
+			continue // empty field, no ID to expand
+		}
+		ref := tx.cli.Collection(f.TagOptions.reference).Doc(id)
+		if err := tx.Get(ref, rv.Interface().(MutableModel)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) expandAll(ctx context.Context, p any) error {
 	modelSlice := reflect.ValueOf(p).Elem()
 	fs, err := defaultFieldCache.fields(modelSlice.Index(0).Type())
