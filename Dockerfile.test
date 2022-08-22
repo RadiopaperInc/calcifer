@@ -1,0 +1,9 @@
+FROM ghcr.io/radiopaperinc/calcifer_build:latest
+
+WORKDIR /calcifer
+
+COPY . .
+
+RUN go get
+RUN go test
+RUN ./firebase emulators:exec --project test "go test"
