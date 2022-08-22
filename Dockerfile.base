@@ -1,0 +1,10 @@
+FROM golang:1.19
+
+WORKDIR /calcifer
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+RUN curl -Lo ./firebase https://firebase.tools/bin/linux/latest
+RUN chmod +x ./firebase
