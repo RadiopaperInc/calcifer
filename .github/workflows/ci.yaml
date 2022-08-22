@@ -12,7 +12,8 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-        token: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Login to GHCR
         uses: docker/login-action@v2
