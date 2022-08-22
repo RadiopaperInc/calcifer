@@ -37,12 +37,8 @@ func (tx *Transaction) Get(dr *DocumentRef, m MutableModel) error {
 	return nil
 }
 
-func (tx *Transaction) GetAll(drs []*DocumentRef, ms any) error {
-	return nil
-}
-
 func (tx *Transaction) Documents(q Queryer) *DocumentIterator {
-	return nil
+	return &DocumentIterator{tx: tx, it: tx.tx.Documents(q.query().q)}
 }
 
 func (tx *Transaction) Set(dr *DocumentRef, m ReadableModel) error {

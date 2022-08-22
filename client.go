@@ -31,8 +31,8 @@ func (c *Client) Collection(path string) *CollectionRef {
 		cref: c.fs.Collection(path),
 		cli:  c,
 		Query: Query{
-			cli:   c,
-			query: c.fs.Collection(path).Query,
+			cli: c,
+			q:   c.fs.Collection(path).Query,
 		},
 	}
 }
