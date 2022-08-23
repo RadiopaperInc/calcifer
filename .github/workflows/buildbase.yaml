@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker:
+  build_base:
     runs-on: ubuntu-latest
     steps:
       -

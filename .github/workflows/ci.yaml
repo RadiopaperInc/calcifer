@@ -1,4 +1,4 @@
-name: "CI"
+name: "Continuous Integration"
 on:
   pull_request:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  docker:
+  test_with_firestore_emulator:
     runs-on: ubuntu-latest
     steps:
       -
