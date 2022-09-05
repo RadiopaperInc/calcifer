@@ -1,5 +1,7 @@
 # Calcifer
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/RadiopaperInc/calcifer.svg)](https://pkg.go.dev/github.com/RadiopaperInc/calcifer)
+
 Calcifer is Radiopaper's ODM (Object-Document Mapping) library, written in Go, targeting Google Cloud Firestore.
 
 Planned features include:
