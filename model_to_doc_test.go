@@ -108,11 +108,15 @@ func TestRelatedModelToDoc(t *testing.T) {
 	}
 	type testModel struct {
 		Model
-		Rel relatedModel `calcifer:"rel,ref:foo"`
+		Rel      relatedModel            `calcifer:"rel,ref:foo"`
+		RelSlice []relatedModel          `calcifer:"relslice,ref:foo"`
+		RelMap   map[string]relatedModel `calcifer:"relmap,ref:foo"`
 	}
 	m := testModel{
-		Model: Model{ID: "1"},
-		Rel:   relatedModel{Model: Model{ID: "2"}},
+		Model:    Model{ID: "1"},
+		Rel:      relatedModel{Model: Model{ID: "2"}},
+		RelSlice: []relatedModel{{Model: Model{ID: "3"}}, {Model: Model{ID: "4"}}},
+		RelMap:   map[string]relatedModel{"five": {Model: Model{ID: "5"}}, "six": {Model: Model{ID: "6"}}},
 	}
 
 	i, err := modelToDoc(m)
@@ -120,4 +124,6 @@ func TestRelatedModelToDoc(t *testing.T) {
 	im := i.(map[string]interface{})
 	assert.Equal(t, "1", im["id"])
 	assert.Equal(t, "2", im["rel"])
+	assert.Equal(t, []string{"3", "4"}, im["relslice"])
+	assert.Equal(t, map[string]string{"five": "5", "six": "6"}, im["relmap"])
 }

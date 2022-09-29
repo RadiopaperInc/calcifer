@@ -86,14 +86,29 @@ func structToInterface(v reflect.Value) (interface{}, error) {
 	}
 	sm := make(map[string]interface{})
 	for _, f := range fs {
+		fv := v.FieldByIndex(f.Index)
 		if f.TagOptions.reference != "" {
-			fk, err := valueToForeignKey(v.FieldByIndex(f.Index))
-			if err != nil {
-				return nil, err
+			if fv.Kind() == reflect.Slice {
+				fk, err := valueToForeignKeySlice(fv)
+				if err != nil {
+					return nil, err
+				}
+				sm[f.Name] = fk
+			} else if fv.Kind() == reflect.Map {
+				fk, err := valueToForeignKeyMap(fv)
+				if err != nil {
+					return nil, err
+				}
+				sm[f.Name] = fk
+			} else {
+				fk, err := valueToForeignKey(fv)
+				if err != nil {
+					return nil, err
+				}
+				sm[f.Name] = fk
 			}
-			sm[f.Name] = fk
 		} else {
-			val, err := valueToInterface(v.FieldByIndex(f.Index))
+			val, err := valueToInterface(fv)
 			if err != nil {
 				return nil, err
 			}
@@ -120,4 +135,34 @@ func valueToForeignKey(v reflect.Value) (string, error) {
 	}
 	sv = sv.FieldByName("ID")
 	return sv.String(), nil
+}
+
+func valueToForeignKeySlice(v reflect.Value) ([]string, error) {
+	n := v.Len()
+	fk := make([]string, n)
+	for i := 0; i < n; i++ {
+		fki, err := valueToForeignKey(v.Index(i))
+		if err != nil {
+			return nil, err
+		}
+		fk[i] = fki
+	}
+	return fk, nil
+}
+
+func valueToForeignKeyMap(v reflect.Value) (map[string]string, error) {
+	fk := make(map[string]string)
+	iter := v.MapRange()
+	for iter.Next() {
+		k := iter.Key()
+		if k.Kind() != reflect.String {
+			return nil, errors.New("calcifer: keys in foreign-key maps must be strings")
+		}
+		fkk, err := valueToForeignKey(iter.Value())
+		if err != nil {
+			return nil, err
+		}
+		fk[k.String()] = fkk
+	}
+	return fk, nil
 }
