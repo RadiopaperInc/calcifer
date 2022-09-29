@@ -68,6 +68,9 @@ func validate(t reflect.Type) error {
 }
 
 func (c *fieldCache) fields(t reflect.Type) (fieldList, error) {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
 	if t.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("calcifer: fields of non-struct type %q", t.String())
 	}

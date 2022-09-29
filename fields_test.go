@@ -33,4 +33,7 @@ func TestFields(t *testing.T) {
 	e := Event{}
 	_, err = defaultFieldCache.fields(reflect.TypeOf(e))
 	assert.NoError(t, err)
+
+	_, err = defaultFieldCache.fields(reflect.TypeOf(&e))
+	assert.NoError(t, err)
 }
