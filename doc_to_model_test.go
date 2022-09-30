@@ -71,6 +71,13 @@ func TestDataToValueMap(t *testing.T) {
 	assert.Equal(t, d, m)
 }
 
+func TestDataToValueSlice(t *testing.T) {
+	var s []string
+	d := []string{"a", "b", "c"}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&s), d))
+	assert.Equal(t, d, s)
+}
+
 func TestDataToValueStruct(t *testing.T) {
 	type testModel struct {
 		Model
@@ -92,11 +99,19 @@ func TestDataToValueRelatedStruct(t *testing.T) {
 	}
 	type testModel struct {
 		Model
-		Rel relatedModel `calcifer:"rel,ref:foo"`
+		Rel      relatedModel            `calcifer:"rel,ref:foo"`
+		RelSlice []relatedModel          `calcifer:"relslice,ref:foo"`
+		RelMap   map[string]relatedModel `calcifer:"relmap,ref:foo"`
 	}
 	var s testModel
-	d := map[string]interface{}{"id": "1", "rel": "2"}
+	d := map[string]interface{}{
+		"id": "1", "rel": "2",
+		"relslice": []string{"3", "4"},
+		"relmap":   map[string]string{"five": "5", "six": "6"},
+	}
 	assert.NoError(t, dataToValue(reflect.ValueOf(&s), d))
 	assert.Equal(t, "1", s.ID)
 	assert.Equal(t, "2", s.Rel.ID)
+	assert.Equal(t, []relatedModel{{Model{ID: "3"}, 0}, {Model{ID: "4"}, 0}}, s.RelSlice)
+	assert.Equal(t, map[string]relatedModel{"five": {Model{ID: "5"}, 0}, "six": {Model{ID: "6"}, 0}}, s.RelMap)
 }
