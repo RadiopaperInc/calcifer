@@ -64,7 +64,7 @@ type Event struct {
 	Model
 
 	Description string
-	Attendees   []User    `calcifer:"attendees,omitempty"`
+	Attendees   []User    `calcifer:"attendees,ref:users,omitempty"`
 	Location    *Location `calcifer:"location,ref:locations"`
 	Start       time.Time `calcifer:"start"`
 	End         time.Time `calcifer:"end"`
@@ -91,6 +91,16 @@ func TestSetAndGetByID(t *testing.T) {
 	ctx := context.Background()
 	cli := testClient(t)
 
+	users := cli.Collection("users")
+	bilboRef, gandalfRef, thorinRef := users.NewDoc(), users.NewDoc(), users.NewDoc()
+	bilbo, gandalf, thorin := User{Email: "bilbo@theshire.net"}, User{Email: "gandalf@middle-earth.org"}, User{Email: "thorin@underthemountain.com"}
+	assert.NoError(t, bilboRef.Set(ctx, bilbo))
+	assert.NoError(t, gandalfRef.Set(ctx, gandalf))
+	assert.NoError(t, thorinRef.Set(ctx, thorin))
+	bilbo.ID = bilboRef.ID
+	gandalf.ID = gandalfRef.ID
+	thorin.ID = thorinRef.ID
+
 	locationRef := cli.Collection("locations").NewDoc()
 	newLocation := Location{
 		Name: "Bag End, Hobbiton, The Shire",
@@ -104,6 +114,7 @@ func TestSetAndGetByID(t *testing.T) {
 		Start:       time.Date(1937, time.September, 21, 17, 0, 0, 0, time.UTC),
 		End:         time.Date(1937, time.September, 22, 06, 0, 0, 0, time.UTC),
 		Location:    &Location{Model: Model{ID: locationRef.ID}},
+		Attendees:   []User{bilbo, gandalf, thorin},
 	}
 	err = eventRef.Set(ctx, newEvent)
 	assert.NoError(t, err)
@@ -112,9 +123,16 @@ func TestSetAndGetByID(t *testing.T) {
 	err = eventRef.Get(ctx, &savedEvent)
 	assert.NoError(t, err)
 
+	var zeroTime time.Time // clear timestamps for comparison
+	for i := range savedEvent.Attendees {
+		savedEvent.Attendees[i].CreateTime = zeroTime
+		savedEvent.Attendees[i].UpdateTime = zeroTime
+	}
+
 	assert.Equal(t, eventRef.ID, savedEvent.ID)
 	assert.NotZero(t, savedEvent.CreateTime)
 	assert.Equal(t, savedEvent.CreateTime, savedEvent.UpdateTime)
+	assert.Equal(t, []User{bilbo, gandalf, thorin}, savedEvent.Attendees)
 	assert.Equal(t, newEvent.Description, savedEvent.Description)
 	assert.Equal(t, newEvent.Start, savedEvent.Start)
 	assert.Equal(t, newEvent.Location.ID, savedEvent.Location.ID)

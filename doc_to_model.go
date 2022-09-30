@@ -183,13 +183,13 @@ OUTER:
 		for _, f := range fs { // TODO: make fs hold a map
 			if f.Name == k {
 				rf := v.FieldByIndex(f.Index)
-				if f.TagOptions.reference != "" {
-					if rf.Kind() == reflect.Slice {
-						if err := populateForeignKeySlice(rf, dd); err != nil {
+				if f.TagOptions.reference != "" && dd != nil {
+					if ds, ok := dd.([]interface{}); ok {
+						if err := populateForeignKeySlice(rf, ds); err != nil {
 							return err
 						}
-					} else if rf.Kind() == reflect.Map {
-						if err := populateForeignKeyMap(rf, dd); err != nil {
+					} else if dm, ok := dd.(map[string]interface{}); ok {
+						if err := populateForeignKeyMap(rf, dm); err != nil {
 							return err
 						}
 					} else {
@@ -221,7 +221,7 @@ func populateMap(v reflect.Value, d map[string]interface{}) error {
 func populateForeignKey(v reflect.Value, dd interface{}) error {
 	d, ok := dd.(string)
 	if !ok {
-		return errors.New("calcifier: cannot use non-string value as foreign key")
+		return fmt.Errorf("calcifier: cannot use non-string value %q as foreign key", reflect.TypeOf(dd))
 	}
 	sv := v.FieldByName("ID")
 	if sv.Kind() != reflect.String {
@@ -231,11 +231,7 @@ func populateForeignKey(v reflect.Value, dd interface{}) error {
 	return nil
 }
 
-func populateForeignKeySlice(v reflect.Value, dd interface{}) error {
-	d, ok := dd.([]string)
-	if !ok {
-		return errors.New("calcifier: cannot use non-[]string value as foreign key slice")
-	}
+func populateForeignKeySlice(v reflect.Value, d []interface{}) error {
 	vlen := v.Len()
 	dlen := len(d)
 	// Make a slice of the right size, avoiding allocation if possible.
@@ -253,11 +249,7 @@ func populateForeignKeySlice(v reflect.Value, dd interface{}) error {
 	return nil
 }
 
-func populateForeignKeyMap(v reflect.Value, dd interface{}) error {
-	d, ok := dd.(map[string]string)
-	if !ok {
-		return errors.New("calcifier: cannot use non-map[string]string value as foreign key map")
-	}
+func populateForeignKeyMap(v reflect.Value, d map[string]interface{}) error {
 	vt := v.Type()
 	if v.IsNil() {
 		v.Set(reflect.MakeMap(vt))

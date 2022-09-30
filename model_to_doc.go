@@ -134,7 +134,11 @@ func valueToForeignKey(v reflect.Value) (string, error) {
 		return "", errors.New("calcifer: missing Model field on foreign key reference object")
 	}
 	sv = sv.FieldByName("ID")
-	return sv.String(), nil
+	ss := sv.String()
+	if ss == "" {
+		return "", errors.New("calcifer: cannot convert Model to foreign key with empty ID field")
+	}
+	return ss, nil
 }
 
 func valueToForeignKeySlice(v reflect.Value) ([]string, error) {

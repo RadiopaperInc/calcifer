@@ -121,7 +121,7 @@ func TestRelatedModelToDoc(t *testing.T) {
 
 	i, err := modelToDoc(m)
 	assert.NoError(t, err)
-	im := i.(map[string]interface{})
+	im := i.(map[string]any)
 	assert.Equal(t, "1", im["id"])
 	assert.Equal(t, "2", im["rel"])
 	assert.Equal(t, []string{"3", "4"}, im["relslice"])

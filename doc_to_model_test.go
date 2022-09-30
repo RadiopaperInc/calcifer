@@ -106,8 +106,8 @@ func TestDataToValueRelatedStruct(t *testing.T) {
 	var s testModel
 	d := map[string]interface{}{
 		"id": "1", "rel": "2",
-		"relslice": []string{"3", "4"},
-		"relmap":   map[string]string{"five": "5", "six": "6"},
+		"relslice": []any{"3", "4"},
+		"relmap":   map[string]any{"five": "5", "six": "6"},
 	}
 	assert.NoError(t, dataToValue(reflect.ValueOf(&s), d))
 	assert.Equal(t, "1", s.ID)
