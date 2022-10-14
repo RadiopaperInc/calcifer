@@ -150,30 +150,3 @@ func TestSetAndGetByID(t *testing.T) {
 	assert.Equal(t, newEvent.Location.ID, savedEvent.Location.ID)
 	assert.Equal(t, newLocation.Name, savedEvent.Location.Name)
 }
-
-func TestFirestoreNestedStructPointers(t *testing.T) {
-	ctx := context.Background()
-	cli, err := firestore.NewClient(ctx, "test")
-	assert.NoError(t, err)
-
-	type C struct {
-		X string `firestore:"x"`
-	}
-
-	type A struct {
-		B []*C `firestore:"b"`
-	}
-
-	a1 := A{B: []*C{&C{X: "x"}}}
-	_, err = cli.Collection("a").Doc("1").Set(ctx, a1)
-	assert.NoError(t, err)
-
-	var a2 A
-	doc, err := cli.Collection("a").Doc("1").Get(ctx)
-	assert.NoError(t, err)
-
-	err = doc.DataTo(&a2)
-	assert.NoError(t, err)
-
-	assert.Equal(t, a1, a2)
-}
