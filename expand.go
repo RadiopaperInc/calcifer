@@ -27,7 +27,14 @@ import (
 func (c *Client) expandField(ctx context.Context, rv reflect.Value, col string) error {
 	if rv.Kind() == reflect.Slice {
 		for i := 0; i < rv.Len(); i++ { // TODO: parallelize
-			if err := c.expandField(ctx, rv.Index(i).Addr(), col); err != nil {
+			el := rv.Index(i)
+			if el.Kind() == reflect.Pointer {
+				if el.IsNil() {
+					el.Set(reflect.New(el.Type().Elem()))
+				}
+				el = el.Elem()
+			}
+			if err := c.expandField(ctx, el.Addr(), col); err != nil {
 				return err
 			}
 		}
@@ -81,7 +88,14 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 func (tx *Transaction) expandField(rv reflect.Value, col string) error {
 	if rv.Kind() == reflect.Slice {
 		for i := 0; i < rv.Len(); i++ { // TODO: parallelize
-			if err := tx.expandField(rv.Index(i).Addr(), col); err != nil {
+			el := rv.Index(i)
+			if el.Kind() == reflect.Pointer {
+				if el.IsNil() {
+					el.Set(reflect.New(el.Type().Elem()))
+				}
+				el = el.Elem()
+			}
+			if err := tx.expandField(el.Addr(), col); err != nil {
 				return err
 			}
 		}

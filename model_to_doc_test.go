@@ -81,6 +81,16 @@ func TestValueToInterfaceStruct(t *testing.T) {
 	assert.Equal(t, map[string]interface{}{"x": int64(-3), "y": int64(7)}, i)
 }
 
+func TestValueToInterfaceSliceField(t *testing.T) {
+	type sliceholder struct {
+		X []int `calcifer:"x"`
+	}
+	s := sliceholder{X: []int{-3, 7}}
+	i, err := valueToInterface(reflect.ValueOf(s))
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]interface{}{"x": []int64{-3, 7}}, i)
+}
+
 func TestModelToDoc(t *testing.T) {
 	type testModel struct {
 		Model

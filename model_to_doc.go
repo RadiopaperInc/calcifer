@@ -23,6 +23,12 @@ import (
 
 func modelToDoc(m ReadableModel) (interface{}, error) {
 	v := reflect.ValueOf(m)
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil, nil
+		}
+		v = v.Elem()
+	}
 	_, err := defaultFieldCache.fields(v.Type())
 	if err != nil {
 		return nil, err
@@ -72,7 +78,25 @@ func valueToInterface(v reflect.Value) (interface{}, error) {
 }
 
 func sliceToInterface(v reflect.Value) (interface{}, error) {
-	return nil, nil // TODO: errors.New("calcifer: sliceToInterface: unimplemented")
+	st := v.Type().Elem()
+	switch st.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		st = typeOfInt64
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		st = typeOfUInt64
+	case reflect.Float32, reflect.Float64:
+		st = typeOfFloat64
+	}
+	st = reflect.SliceOf(st)
+	sv := reflect.MakeSlice(st, v.Len(), v.Len())
+	for i := 0; i < v.Len(); i++ {
+		iv, err := valueToInterface(v.Index(i))
+		if err != nil {
+			return nil, err
+		}
+		sv.Index(i).Set(reflect.ValueOf(iv))
+	}
+	return sv.Interface(), nil
 }
 
 func mapToInterface(v reflect.Value) (interface{}, error) {
@@ -145,7 +169,11 @@ func valueToForeignKeySlice(v reflect.Value) ([]string, error) {
 	n := v.Len()
 	fk := make([]string, n)
 	for i := 0; i < n; i++ {
-		fki, err := valueToForeignKey(v.Index(i))
+		vi := v.Index(i)
+		if v.Kind() == reflect.Pointer { // TODO: is this needed?
+			v = v.Elem()
+		}
+		fki, err := valueToForeignKey(vi)
 		if err != nil {
 			return nil, err
 		}

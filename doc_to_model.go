@@ -26,6 +26,9 @@ import (
 var (
 	typeOfByteSlice = reflect.TypeOf([]byte{})
 	typeOfGoTime    = reflect.TypeOf(time.Time{})
+	typeOfInt64     = reflect.TypeOf(int64(0))
+	typeOfUInt64    = reflect.TypeOf(uint64(0))
+	typeOfFloat64   = reflect.TypeOf(float64(0))
 )
 
 func docToModel(m MutableModel, doc *firestore.DocumentSnapshot) error {
@@ -222,6 +225,10 @@ func populateForeignKey(v reflect.Value, dd interface{}) error {
 	d, ok := dd.(string)
 	if !ok {
 		return fmt.Errorf("calcifier: cannot use non-string value %q as foreign key", reflect.TypeOf(dd))
+	}
+	if v.Kind() == reflect.Pointer {
+		v.Set(reflect.New(v.Type().Elem()))
+		v = v.Elem()
 	}
 	sv := v.FieldByName("ID")
 	if sv.Kind() != reflect.String {
