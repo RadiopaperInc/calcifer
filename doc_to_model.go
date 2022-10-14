@@ -24,11 +24,12 @@ import (
 )
 
 var (
-	typeOfByteSlice = reflect.TypeOf([]byte{})
-	typeOfGoTime    = reflect.TypeOf(time.Time{})
-	typeOfInt64     = reflect.TypeOf(int64(0))
-	typeOfUInt64    = reflect.TypeOf(uint64(0))
-	typeOfFloat64   = reflect.TypeOf(float64(0))
+	typeOfByteSlice          = reflect.TypeOf([]byte{})
+	typeOfGoTime             = reflect.TypeOf(time.Time{})
+	typeOfInt64              = reflect.TypeOf(int64(0))
+	typeOfUInt32             = reflect.TypeOf(uint32(0))
+	typeOfFloat64            = reflect.TypeOf(float64(0))
+	typeOfMapStringInterface = reflect.TypeOf(map[string]interface{}{})
 )
 
 func docToModel(m MutableModel, doc *firestore.DocumentSnapshot) error {

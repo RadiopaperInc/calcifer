@@ -50,7 +50,7 @@ func valueToInterface(v reflect.Value) (interface{}, error) {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return v.Int(), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
-		return v.Uint(), nil
+		return uint32(v.Uint()), nil
 	case reflect.Float32, reflect.Float64:
 		return v.Float(), nil
 	case reflect.String:
@@ -83,9 +83,11 @@ func sliceToInterface(v reflect.Value) (interface{}, error) {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		st = typeOfInt64
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
-		st = typeOfUInt64
+		st = typeOfUInt32
 	case reflect.Float32, reflect.Float64:
 		st = typeOfFloat64
+	case reflect.Struct:
+		st = typeOfMapStringInterface
 	}
 	st = reflect.SliceOf(st)
 	sv := reflect.MakeSlice(st, v.Len(), v.Len())
