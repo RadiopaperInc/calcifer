@@ -119,21 +119,33 @@ func TestRelatedModelToDoc(t *testing.T) {
 	type testModel struct {
 		Model
 		Rel      relatedModel            `calcifer:"rel,ref:foo"`
+		RelPtr   *relatedModel           `calcifer:"relptr,ref:foo"`
 		RelSlice []relatedModel          `calcifer:"relslice,ref:foo"`
 		RelMap   map[string]relatedModel `calcifer:"relmap,ref:foo"`
 	}
-	m := testModel{
+
+	m1 := testModel{
 		Model:    Model{ID: "1"},
 		Rel:      relatedModel{Model: Model{ID: "2"}},
-		RelSlice: []relatedModel{{Model: Model{ID: "3"}}, {Model: Model{ID: "4"}}},
-		RelMap:   map[string]relatedModel{"five": {Model: Model{ID: "5"}}, "six": {Model: Model{ID: "6"}}},
+		RelPtr:   &relatedModel{Model: Model{ID: "3"}},
+		RelSlice: []relatedModel{{Model: Model{ID: "4"}}, {Model: Model{ID: "5"}}},
+		RelMap:   map[string]relatedModel{"six": {Model: Model{ID: "6"}}, "seven": {Model: Model{ID: "7"}}},
 	}
-
-	i, err := modelToDoc(m)
+	i1, err := modelToDoc(m1)
 	assert.NoError(t, err)
-	im := i.(map[string]any)
+	im := i1.(map[string]any)
 	assert.Equal(t, "1", im["id"])
 	assert.Equal(t, "2", im["rel"])
-	assert.Equal(t, []string{"3", "4"}, im["relslice"])
-	assert.Equal(t, map[string]string{"five": "5", "six": "6"}, im["relmap"])
+	assert.Equal(t, "3", im["relptr"])
+	assert.Equal(t, []string{"4", "5"}, im["relslice"])
+	assert.Equal(t, map[string]string{"six": "6", "seven": "7"}, im["relmap"])
+
+	m2 := testModel{
+		Model: Model{ID: "1"},
+	}
+	i2, err := modelToDoc(m2)
+	assert.NoError(t, err)
+	im = i2.(map[string]any)
+	assert.Equal(t, "1", im["id"])
+	assert.Empty(t, im["relptr"])
 }

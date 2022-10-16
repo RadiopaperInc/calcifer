@@ -162,7 +162,7 @@ func valueToForeignKey(v reflect.Value) (string, error) {
 	sv = sv.FieldByName("ID")
 	ss := sv.String()
 	if ss == "" {
-		return "", errors.New("calcifer: cannot convert Model to foreign key with empty ID field")
+		return "", nil
 	}
 	return ss, nil
 }
