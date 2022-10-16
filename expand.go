@@ -24,6 +24,45 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+func (c *Client) expandField(ctx context.Context, rv reflect.Value, col string) error {
+	if rv.Kind() == reflect.Slice {
+		for i := 0; i < rv.Len(); i++ { // TODO: parallelize
+			el := rv.Index(i)
+			if el.Kind() == reflect.Pointer {
+				if el.IsNil() {
+					el.Set(reflect.New(el.Type().Elem()))
+				}
+				el = el.Elem()
+			}
+			if err := c.expandField(ctx, el.Addr(), col); err != nil {
+				return err
+			}
+		}
+		return nil
+	} else if rv.Kind() == reflect.Map {
+		return errors.New("caclifer: expansion of maps to foreign keys unimplemented")
+	} else if rv.Kind() != reflect.Pointer {
+		return errors.New("calcifier: trying to expand into non-pointer field")
+	}
+	if rv.IsNil() {
+		return nil
+	}
+	sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
+	if sv.Kind() != reflect.Struct {
+		return errors.New("calcifer: missing Model field on foreign key reference object")
+	}
+	sv = sv.FieldByName("ID")
+	id := sv.String()
+	if id == "" {
+		return nil // empty field, no ID to expand
+	}
+	ref := c.Collection(col).Doc(id)
+	if err := ref.Get(ctx, rv.Interface().(MutableModel)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 	v := reflect.ValueOf(m)
 	if v.Kind() == reflect.Pointer {
@@ -37,28 +76,52 @@ func (c *Client) expandModel(ctx context.Context, m MutableModel) error {
 		return err
 	}
 	for _, f := range fs { // TODO: parallelize
-		if f.TagOptions.reference == "" {
+		col := f.TagOptions.reference
+		if col == "" {
 			continue
 		}
 		rv := v.FieldByIndex(f.Index)
-		if rv.Kind() != reflect.Pointer {
-			return errors.New("calcifier: trying to expand into non-pointer field")
-		}
-		sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
-		if sv.Kind() != reflect.Struct {
-			return errors.New("calcifer: missing Model field on foreign key reference object")
-		}
-		sv = sv.FieldByName("ID")
-		id := sv.String()
-		if id == "" {
-			continue // empty field, no ID to expand
-		}
-		ref := c.Collection(f.TagOptions.reference).Doc(id)
-		if err := ref.Get(ctx, rv.Interface().(MutableModel)); err != nil {
+		if err := c.expandField(ctx, rv, col); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (tx *Transaction) expandField(rv reflect.Value, col string) error {
+	if rv.Kind() == reflect.Slice {
+		for i := 0; i < rv.Len(); i++ { // TODO: parallelize
+			el := rv.Index(i)
+			if el.Kind() == reflect.Pointer {
+				if el.IsNil() {
+					el.Set(reflect.New(el.Type().Elem()))
+				}
+				el = el.Elem()
+			}
+			if err := tx.expandField(el.Addr(), col); err != nil {
+				return err
+			}
+		}
+		return nil
+	} else if rv.Kind() == reflect.Map {
+		return errors.New("caclifer: expansion of maps to foreign keys unimplemented")
+	} else if rv.Kind() != reflect.Pointer {
+		return errors.New("calcifier: trying to expand into non-pointer field")
+	}
+	if rv.IsNil() {
+		return nil
+	}
+	sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
+	if sv.Kind() != reflect.Struct {
+		return errors.New("calcifer: missing Model field on foreign key reference object")
+	}
+	sv = sv.FieldByName("ID")
+	id := sv.String()
+	if id == "" {
+		return nil // empty field, no ID to expand
+	}
+	ref := tx.cli.Collection(col).Doc(id)
+	return tx.Get(ref, rv.Interface().(MutableModel))
 }
 
 func (tx *Transaction) expandModel(m MutableModel) error {
@@ -74,24 +137,12 @@ func (tx *Transaction) expandModel(m MutableModel) error {
 		return err
 	}
 	for _, f := range fs { // TODO: parallelize
-		if f.TagOptions.reference == "" {
+		col := f.TagOptions.reference
+		if col == "" {
 			continue
 		}
 		rv := v.FieldByIndex(f.Index)
-		if rv.Kind() != reflect.Pointer {
-			return errors.New("calcifier: trying to expand into non-pointer field")
-		}
-		sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
-		if sv.Kind() != reflect.Struct {
-			return errors.New("calcifer: missing Model field on foreign key reference object")
-		}
-		sv = sv.FieldByName("ID")
-		id := sv.String()
-		if id == "" {
-			continue // empty field, no ID to expand
-		}
-		ref := tx.cli.Collection(f.TagOptions.reference).Doc(id)
-		if err := tx.Get(ref, rv.Interface().(MutableModel)); err != nil {
+		if err := tx.expandField(rv, col); err != nil {
 			return err
 		}
 	}

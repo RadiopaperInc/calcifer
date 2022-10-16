@@ -71,15 +71,31 @@ func TestTransactionalSetAndGetExpansion(t *testing.T) {
 	newLocation := Location{
 		Name: "Bag End, Hobbiton, The Shire",
 	}
+	users := cli.Collection("users")
+	bilboRef, gandalfRef, thorinRef := users.NewDoc(), users.NewDoc(), users.NewDoc()
+	bilbo, gandalf, thorin := User{Email: "bilbo@theshire.net"}, User{Email: "gandalf@middle-earth.org"}, User{Email: "thorin@underthemountain.com"}
+	bilbo.ID = bilboRef.ID
+	gandalf.ID = gandalfRef.ID
+	thorin.ID = thorinRef.ID
 	eventRef := cli.Collection("events").NewDoc()
 	newEvent := Event{
 		Description: "An Unexpected Party",
 		Start:       time.Date(1937, time.September, 21, 17, 0, 0, 0, time.UTC),
 		End:         time.Date(1937, time.September, 22, 06, 0, 0, 0, time.UTC),
 		Location:    &Location{Model: Model{ID: locationRef.ID}},
+		Attendees:   []User{bilbo, gandalf, thorin},
 	}
 
 	err := cli.RunTransaction(ctx, func(ctx context.Context, tx *Transaction) error {
+		if err := tx.Set(bilboRef, bilbo); err != nil {
+			return err
+		}
+		if err := tx.Set(gandalfRef, gandalf); err != nil {
+			return err
+		}
+		if err := tx.Set(thorinRef, thorin); err != nil {
+			return err
+		}
 		if err := tx.Set(locationRef, newLocation); err != nil {
 			return err
 		}
@@ -99,6 +115,9 @@ func TestTransactionalSetAndGetExpansion(t *testing.T) {
 	assert.Equal(t, eventRef.ID, savedEvent.ID)
 	assert.NotZero(t, savedEvent.CreateTime)
 	assert.Equal(t, savedEvent.CreateTime, savedEvent.UpdateTime)
+	assert.Len(t, savedEvent.Attendees, 3)
+	assert.Equal(t, gandalf.ID, savedEvent.Attendees[1].ID)
+	assert.Equal(t, gandalf.Email, savedEvent.Attendees[1].Email)
 	assert.Equal(t, newEvent.Description, savedEvent.Description)
 	assert.Equal(t, newEvent.Start, savedEvent.Start)
 	assert.Equal(t, newEvent.Location.ID, savedEvent.Location.ID)

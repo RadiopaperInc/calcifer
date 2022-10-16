@@ -24,8 +24,12 @@ import (
 )
 
 var (
-	typeOfByteSlice = reflect.TypeOf([]byte{})
-	typeOfGoTime    = reflect.TypeOf(time.Time{})
+	typeOfByteSlice          = reflect.TypeOf([]byte{})
+	typeOfGoTime             = reflect.TypeOf(time.Time{})
+	typeOfInt64              = reflect.TypeOf(int64(0))
+	typeOfUInt32             = reflect.TypeOf(uint32(0))
+	typeOfFloat64            = reflect.TypeOf(float64(0))
+	typeOfMapStringInterface = reflect.TypeOf(map[string]interface{}{})
 )
 
 func docToModel(m MutableModel, doc *firestore.DocumentSnapshot) error {
@@ -102,7 +106,21 @@ func dataToValue(v reflect.Value, d interface{}) error {
 		}
 		return populateMap(v, x)
 	case reflect.Slice:
-		return errors.New("calcifer: slice deserialization unimplemented")
+		if dv.Kind() != reflect.Slice {
+			return typeErr()
+		}
+		dlen := dv.Len()
+		vlen := v.Len()
+		if vlen < dlen {
+			v.Set(reflect.MakeSlice(v.Type(), dlen, dlen))
+		} else {
+			v.SetLen(dlen)
+		}
+		for i := 0; i < dlen; i++ {
+			if err := dataToValue(v.Index(i), dv.Index(i).Interface()); err != nil {
+				return err
+			}
+		}
 	case reflect.Bool:
 		x, ok := d.(bool)
 		if !ok {
@@ -169,20 +187,19 @@ OUTER:
 		for _, f := range fs { // TODO: make fs hold a map
 			if f.Name == k {
 				rf := v.FieldByIndex(f.Index)
-				if f.TagOptions.reference != "" {
-					ds, ok := dd.(string)
-					if !ok {
-						return errors.New("calcifier: cannot use non-string value as foreign key")
-					}
-					if rf.Kind() == reflect.Pointer {
-						if rf.IsNil() {
-							rf.Set(reflect.New(rf.Type().Elem()))
+				if f.TagOptions.reference != "" && dd != nil {
+					if ds, ok := dd.([]interface{}); ok {
+						if err := populateForeignKeySlice(rf, ds); err != nil {
+							return err
 						}
-						rf = rf.Elem()
-					}
-					if err := populateForeignKey(rf, ds); err != nil {
+					} else if dm, ok := dd.(map[string]interface{}); ok {
+						if err := populateForeignKeyMap(rf, dm); err != nil {
+							return err
+						}
+					} else if err := populateForeignKey(rf, dd); err != nil {
 						return err
 					}
+
 				} else if err := dataToValue(rf, dd); err != nil {
 					return err
 				}
@@ -198,11 +215,59 @@ func populateMap(v reflect.Value, d map[string]interface{}) error {
 	return errors.New("calcifer: populateMap: unimplemented")
 }
 
-func populateForeignKey(v reflect.Value, d string) error {
+func populateForeignKey(v reflect.Value, dd interface{}) error {
+	d, ok := dd.(string)
+	if !ok {
+		return fmt.Errorf("calcifier: cannot use non-string value %q as foreign key", reflect.TypeOf(dd))
+	}
+	if d == "" {
+		v.Set(reflect.Zero(v.Type())) // zero value struct or nil pointer
+		return nil
+	}
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		v = v.Elem()
+	}
 	sv := v.FieldByName("ID")
 	if sv.Kind() != reflect.String {
 		return errors.New("calcifer: missing string ID field on foreign key model")
 	}
 	sv.SetString(d)
+	return nil
+}
+
+func populateForeignKeySlice(v reflect.Value, d []interface{}) error {
+	vlen := v.Len()
+	dlen := len(d)
+	// Make a slice of the right size, avoiding allocation if possible.
+	if vlen < dlen {
+		v.Set(reflect.MakeSlice(v.Type(), dlen, dlen))
+	} else {
+		v.SetLen(dlen)
+	}
+
+	for i := 0; i < dlen; i++ {
+		if err := populateForeignKey(v.Index(i), d[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func populateForeignKeyMap(v reflect.Value, d map[string]interface{}) error {
+	vt := v.Type()
+	if v.IsNil() {
+		v.Set(reflect.MakeMap(vt))
+	}
+	et := vt.Elem()
+	for k := range d {
+		el := reflect.New(et).Elem()
+		if err := populateForeignKey(el, d[k]); err != nil {
+			return err
+		}
+		v.SetMapIndex(reflect.ValueOf(k), el)
+	}
 	return nil
 }
