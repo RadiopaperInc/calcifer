@@ -44,6 +44,9 @@ func (c *Client) expandField(ctx context.Context, rv reflect.Value, col string) 
 	} else if rv.Kind() != reflect.Pointer {
 		return errors.New("calcifier: trying to expand into non-pointer field")
 	}
+	if rv.IsNil() {
+		return nil
+	}
 	sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
 	if sv.Kind() != reflect.Struct {
 		return errors.New("calcifer: missing Model field on foreign key reference object")
@@ -104,6 +107,9 @@ func (tx *Transaction) expandField(rv reflect.Value, col string) error {
 		return errors.New("caclifer: expansion of maps to foreign keys unimplemented")
 	} else if rv.Kind() != reflect.Pointer {
 		return errors.New("calcifier: trying to expand into non-pointer field")
+	}
+	if rv.IsNil() {
+		return nil
 	}
 	sv := rv.Elem().FieldByName("Model") // TODO: ensure this is a calcifer.Model?
 	if sv.Kind() != reflect.Struct {
