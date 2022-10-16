@@ -115,3 +115,38 @@ func TestDataToValueRelatedStruct(t *testing.T) {
 	assert.Equal(t, []relatedModel{{Model{ID: "3"}, 0}, {Model{ID: "4"}, 0}}, s.RelSlice)
 	assert.Equal(t, map[string]relatedModel{"five": {Model{ID: "5"}, 0}, "six": {Model{ID: "6"}, 0}}, s.RelMap)
 }
+
+func TestDataToValueRelatedPtr(t *testing.T) {
+	type relatedModel struct {
+		Model
+		X int `calcifer:"x"`
+	}
+	type testModel struct {
+		Model
+		Rel *relatedModel `calcifer:"rel,ref:foo"`
+	}
+
+	var s1 testModel
+	d1 := map[string]interface{}{
+		"id": "1", "rel": "2",
+	}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&s1), d1))
+	assert.Equal(t, "1", s1.ID)
+	assert.Equal(t, "2", s1.Rel.ID)
+
+	var s2 testModel
+	d2 := map[string]interface{}{
+		"id": "1", "rel": "",
+	}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&s2), d2))
+	assert.Equal(t, "1", s2.ID)
+	assert.Nil(t, s2.Rel)
+
+	var s3 testModel
+	d3 := map[string]interface{}{
+		"id": "1",
+	}
+	assert.NoError(t, dataToValue(reflect.ValueOf(&s3), d3))
+	assert.Equal(t, "1", s3.ID)
+	assert.Nil(t, s3.Rel)
+}

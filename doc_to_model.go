@@ -196,17 +196,10 @@ OUTER:
 						if err := populateForeignKeyMap(rf, dm); err != nil {
 							return err
 						}
-					} else {
-						if rf.Kind() == reflect.Pointer {
-							if rf.IsNil() {
-								rf.Set(reflect.New(rf.Type().Elem()))
-							}
-							rf = rf.Elem()
-						}
-						if err := populateForeignKey(rf, dd); err != nil {
-							return err
-						}
+					} else if err := populateForeignKey(rf, dd); err != nil {
+						return err
 					}
+
 				} else if err := dataToValue(rf, dd); err != nil {
 					return err
 				}
@@ -227,8 +220,14 @@ func populateForeignKey(v reflect.Value, dd interface{}) error {
 	if !ok {
 		return fmt.Errorf("calcifier: cannot use non-string value %q as foreign key", reflect.TypeOf(dd))
 	}
+	if d == "" {
+		v.Set(reflect.Zero(v.Type())) // zero value struct or nil pointer
+		return nil
+	}
 	if v.Kind() == reflect.Pointer {
-		v.Set(reflect.New(v.Type().Elem()))
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
 		v = v.Elem()
 	}
 	sv := v.FieldByName("ID")
