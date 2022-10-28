@@ -149,3 +149,72 @@ func TestRelatedModelToDoc(t *testing.T) {
 	assert.Equal(t, "1", im["id"])
 	assert.Empty(t, im["relptr"])
 }
+
+func TestModelToDocNestedStructs(t *testing.T) {
+	type User struct {
+		Model
+		Name string `calcifer:"name"`
+	}
+
+	type Message struct {
+		// ID       string `calcifer:"id"`
+		Body     string `calcifer:"body"`
+		Author   User   `calcifer:"author,ref(user)"`
+		Mentions []User `calcifer:"mentions,ref(user)"`
+	}
+
+	type Thread struct {
+		Model
+		Messages []Message `calcifer:"messages"`
+	}
+
+	u1 := User{
+		Model: Model{ID: "A"},
+		Name:  "Dave",
+	}
+	u2 := User{
+		Model: Model{ID: "B"},
+		Name:  "Nate",
+	}
+	u3 := User{
+		Model: Model{ID: "C"},
+		Name:  "Evan",
+	}
+	u4 := User{
+		Model: Model{ID: "D"},
+		Name:  "Bob",
+	}
+
+	t1 := Thread{
+		Model: Model{ID: "t1"},
+		Messages: []Message{
+			{
+				Body: "Hi",
+				Author: User{
+					Model: Model{ID: u1.ID},
+				},
+			},
+			{
+				Body: "Hello (/cc Evan & Bob)",
+				Author: User{
+					Model: Model{ID: u2.ID},
+				},
+				Mentions: []User{
+					{Model: Model{ID: u3.ID}},
+					{Model: Model{ID: u4.ID}},
+				},
+			},
+		},
+	}
+
+	doc, err := modelToDoc(t1)
+	assert.NoError(t, err)
+	docMap := doc.(map[string]any)
+	assert.Equal(t, map[string]any{
+		"id": "t1",
+		"messages": []map[string]any{
+			{"author": "A", "body": "Hi"},
+			{"author": "B", "body": "Hello (/cc Evan & Bob)", "mentions": []string{"C", "D"}},
+		},
+	}, docMap)
+}
